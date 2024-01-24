@@ -47,11 +47,12 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-trait_vector = {'Formality': (10, 132, 1, 'nospread', {'DEFAULT': 1.7}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
+trait_vector = {'Formality': (5, 373, 1, 'multilevel', {'PUNCT': 2, 'DEFAULT': 0, 'SUBRULE': {'DEFAULT': 1}}, None, 'PaleGreen', 'MediumSeaGreen', 'DarkRed', 'LightCoral', False),
                 'Narrativity': (6, 210, 1, 'spread',
                                 {'ADP': 2, 'DET': 2, 'AUX': 0.4, 'ADV': 0.5, 'PRON': 0.8, 'PROPN': 0.5, 'VERB': 0.8, 'DEFAULT': 1},
                                 {'QUOTE': -.5, 'PRON': -1, 'DEFAULT': -2},'MediumSeaGreen', 'PaleGreen', 'White', 'White', False),
                 'SentenceComplexity': (0, 190, 1, 'multilevel', {'DEFAULT': 0.7, 'SUBRULE': {'DEFAULT': 2}}, {'DEFAULT': -.7, 'SUBRULE': {'DEFAULT': -1}}, 'MediumSeaGreen', 'PaleGreen', 'DarkRed', 'LightCoral', False),
+                'SentenceLength': (10, 245, -1, 'multilevel', {'DEFAULT': 0.7, 'SUBRULE': {'DEFAULT': 1.8}}, {'DEFAULT': -1, 'SUBRULE': {'DEFAULT': -2}}, 'MediumSeaGreen', 'PaleGreen', 'DarkRed', 'LightCoral', False),
                 'Cohesion': (10, 210, 1, 'nospread', {'PUNCT': 5, 'DEFAULT': 2}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
                 'Dialog': (8, 347, -1, 'fullspread', {'QUOTE': 0.5, 'PRON': 1.2, 'ADP': 1.2, 'DEFAULT': 1}, None, 'MediumSeaGreen', 'PaleGreen', 'White', 'White', False),
                 'Organization': (11, 348, 1, 'multilevel', {'PUNCT': 2, 'DET': 2, 'DEFAULT': 0, 'SUBRULE': {'DEFAULT': 1}}, {'DEFAULT': 0, 'SUBRULE': {'DEFAULT': -1}}, 'MediumSeaGreen', 'PaleGreen', 'DarkRed', 'LightCoral', False),
@@ -61,9 +62,9 @@ trait_vector = {'Formality': (10, 132, 1, 'nospread', {'DEFAULT': 1.7}, None, 'P
                 'Interactivity': (10, 362, -1, 'spread', {'PUNCT': 2, 'NOUN':1, 'PROPN': 1.5, 'ADJ': 1, 'NUM': 1, 'ADV': 0.5, 'VERB': 0.8, 'SCONJ': 1, 'CCONJ': 1, 'AUX': 1.3, 'DEFAULT': 0.3}, {'DET': -2, 'PRON': -2, 'PUNCT': -2, 'AUX': -2, 'DEFAULT': -1}, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
                 'Contextualization': (10, 107, 1, 'nospread', {'PRON': 0.3, 'PROPN': 0.5, 'PUNCT': 1.5, 'DEFAULT': 0.95}, None, 'MediumSeaGreen', 'PaleGreen', 'White', 'White', True),
                 'StanceTaking': (0, 373, -1, 'spread', {'AUX': 2.5, 'PRON': 2, 'DET': 2, 'CCONJ': 1.5, 'SCONJ': 1.5, 'DEFAULT': 1.3}, None, 'MediumSeaGreen', 'PaleGreen', 'White', 'White', False),
-                'VocabularyDifficulty': (10, 132, 1, 'nospread', {'DEFAULT': 2}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
+                'VocabularyDifficulty': (5, 132, 1, 'multilevel', {'DEFAULT': 2.35, 'SUBRULE': {'DEFAULT': 3}}, None, 'MediumSeaGreen', 'PaleGreen', 'White', 'White', False),
                 'hscore': (7, 358, -1, 'spread', {'PUNCT': 2, 'DEFAULT': 1}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
-                'VocabularyFrequency': (5, 187, 1, 'nospread', {'PUNCT': 2, 'DEFAULT': 0}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
+                'VocabularyFrequency': (5, 187, 1, 'multilevel', {'PUNCT': 2, 'DEFAULT': 0.7, 'SUBRULE': {'DEFAULT': 1}}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False),
                 'LexicalTightness': (10, 35, -1, 'nospread', {'PRON': 2, 'ADJ': 1.2, 'PUNCT': 2, 'CCONJ': 2, 'ADV': 1.5, 'AUX': 2, 'DEFAULT': 0.9}, None, 'PaleGreen', 'PaleGreen', 'White', 'White', False)}
 
 excludes = [3,75,76,81,132,178,206,244,245,304,367,373]
@@ -93,14 +94,12 @@ def main(
     rows = []
     for index, row in csvFile.iterrows():
         tID = row[text_id]
-        print('processing', tID)
+        print('processing', tID, ' ', index, 'of', len(csvFile))
 
         if passthrough is not None:
             passthrough_vars = passthrough.split(',')
 
         essay = row[text]
-        if essay is None or type(essay) is float:
-            continue
         essay = essay.replace('."', '".')
         
         nlp = spacy.load("en_core_web_sm")

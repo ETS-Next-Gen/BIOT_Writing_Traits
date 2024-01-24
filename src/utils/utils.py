@@ -799,7 +799,10 @@ def getRoot(token):
     return getRoot(token.head)
 
 def pastThreshold(tok, trait, rule, sign, store, include_stops):
-     if tok.lemma_ in store:
+     if (tok.lemma_ in store
+         or tok.text in store
+         or tok.text.lower() in store
+         or tok.lemma_.lower() in store):
          return True
      if tok.pos_ in rule:
          threshold = rule[tok.pos_]
@@ -812,10 +815,22 @@ def pastThreshold(tok, trait, rule, sign, store, include_stops):
      if sign == 'above' and getattr(tok._, trait) >= threshold:
          if tok.lemma_ not in store and (tok.lemma_ not in stops or include_stops):
              store.append(tok.lemma_)
+             if tok.text not in store:
+                 store.append(tok.text)
+             if tok.text.lower() not in store:
+                 store.append(tok.text.lower())
+             if tok.lemma_.lower() not in store:
+                 store.append(tok.lemma_.lower())
          return True
      if sign == 'below' and getattr(tok._, trait) <= threshold:
          if tok.lemma_ not in store and (tok.lemma_ not in stops or include_stops):
              store.append(tok.lemma_)
+             if tok.text not in store:
+                 store.append(tok.text)
+             if tok.text.lower() not in store:
+                 store.append(tok.text.lower())
+             if tok.lemma_.lower() not in store:
+                 store.append(tok.lemma_.lower())
          return True
      return False
 
@@ -854,8 +869,8 @@ def apply_highlights(doc, trait, method, rule, color1, color2, negRule, color3, 
            or (rule is not None and tok == getTensedVerbHead(tok) \
             and meanAbove(doc, getTensedVerbHead(tok), trait, rule['DEFAULT'])) \
            or (rule is not None \
-            and pastThreshold(tok, trait, rule, 'above', store, include_stops)) \
-            and meanAbove(doc, getTensedVerbHead(tok), trait, -0.3):
+            and pastThreshold(tok, trait, rule, 'above', store, include_stops) \
+            and meanAbove(doc, getTensedVerbHead(tok), trait, -0.3)):
             if method in ['spread', 'fullspread']:
                 dimHighlight(doc, getTensedVerbHead(tok), method)
                 tok._.bright_highlight = True
