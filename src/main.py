@@ -99,6 +99,8 @@ def main(
             passthrough_vars = passthrough.split(',')
 
         essay = row[text]
+        if essay is None or type(essay) is float:
+            continue
         essay = essay.replace('."', '".')
         
         nlp = spacy.load("en_core_web_sm")
