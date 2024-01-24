@@ -1,0 +1,10 @@
+torch
+transformers
+scikit-learn
+sentencepiece
+pandas
+protobuf
+spacy
+gradio
+matplotlib
+nltk
