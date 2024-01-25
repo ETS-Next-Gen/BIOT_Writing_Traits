@@ -1,5 +1,8 @@
 ```
-This library supports a method for creating interpretable dimensions of an LLM embedding, using a method that rotates the embedding to maximize explainability with respect to a list of predictor variables.
+This library supports a method for creating interpretable 
+dimensions of an LLM embedding, using a method that rotates
+the embedding to maximize explainability with respect to a
+list of predictor variables.
 
 The method in question is BIOT 
 (paper at https://www.sciencedirect.com/science/article/abs/pii/S0925231221006469, 
