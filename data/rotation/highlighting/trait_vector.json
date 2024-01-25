@@ -1,0 +1,326 @@
+{
+    "Formality": [
+        5,
+        373,
+        1,
+        "multilevel",
+        {
+            "PUNCT": 2,
+            "DEFAULT": 0,
+            "SUBRULE": {
+                "DEFAULT": 1
+            }
+        },
+        null,
+        "PaleGreen",
+        "MediumSeaGreen",
+        "DarkRed",
+        "LightCoral",
+        false
+    ],
+    "SentenceComplexity": [
+        0,
+        190,
+        1,
+        "multilevel",
+        {
+            "DEFAULT": 0.7,
+            "SUBRULE": {
+                "DEFAULT": 2
+            }
+        },
+        {
+            "DEFAULT": -0.7,
+            "SUBRULE": {
+                "DEFAULT": -1
+            }
+        },
+        "MediumSeaGreen",
+        "PaleGreen",
+        "DarkRed",
+        "LightCoral",
+        false
+    ],
+    "SentenceLength": [
+        10,
+        245,
+        -1,
+        "multilevel",
+        {
+            "DEFAULT": 0.7,
+            "SUBRULE": {
+                "DEFAULT": 1.8
+            }
+        },
+        {
+            "DEFAULT": -1,
+            "SUBRULE": {
+                "DEFAULT": -2
+            }
+        },
+        "MediumSeaGreen",
+        "PaleGreen",
+        "DarkRed",
+        "LightCoral",
+        false
+    ],
+    "Cohesion": [
+        10,
+        210,
+        1,
+        "nospread",
+        {
+            "PUNCT": 5,
+            "DEFAULT": 2
+        },
+        null,
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "Dialog": [
+        10,
+        347,
+        -1,
+        "fullspread",
+        {
+            "QUOTE": 0.5,
+            "PRON": 1.2,
+            "ADP": 1.2,
+            "DEFAULT": 1
+        },
+        null,
+        "MediumSeaGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "Organization": [
+        11,
+        348,
+        1,
+        "multilevel",
+        {
+            "PUNCT": 2,
+            "DET": 2,
+            "DEFAULT": 0,
+            "SUBRULE": {
+                "DEFAULT": 1
+            }
+        },
+        {
+            "DEFAULT": 0,
+            "SUBRULE": {
+                "DEFAULT": -1
+            }
+        },
+        "MediumSeaGreen",
+        "PaleGreen",
+        "DarkRed",
+        "LightCoral",
+        false
+    ],
+    "GrammarUsage": [
+        11,
+        164,
+        -1,
+        "spread",
+        null,
+        {
+            "PUNCT": -2,
+            "DET": -2,
+            "ADP": -1,
+            "NOUN": -0.1,
+            "PROPN": -0.1,
+            "DEFAULT": -0.5
+        },
+        "White",
+        "White",
+        "LightCoral",
+        "LightCoral",
+        false
+    ],
+    "Concreteness": [
+        4,
+        315,
+        -1,
+        "nospread",
+        {
+            "PUNCT": 2,
+            "ADJ": 1.5,
+            "ADP": 0.8,
+            "DEFAULT": 1.3
+        },
+        null,
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "Conventionality": [
+        10,
+        285,
+        1,
+        "nospread",
+        null,
+        {
+            "ADP": -2.5,
+            "SCONJ": -1,
+            "PRON": -0.5,
+            "CCONJ": -1,
+            "X": -1,
+            "INTJ": -1.5,
+            "PUNCT": -2,
+            "DEFAULT": -3.3
+        },
+        "White",
+        "White",
+        "IndianRed",
+        "LightCoral",
+        false
+    ],
+    "Interactivity": [
+        10,
+        362,
+        -1,
+        "spread",
+        {
+            "PUNCT": 2,
+            "NOUN": 1,
+            "PROPN": 1.5,
+            "ADJ": 1,
+            "NUM": 1,
+            "ADV": 0.5,
+            "VERB": 0.8,
+            "SCONJ": 1,
+            "CCONJ": 1,
+            "AUX": 1.3,
+            "DEFAULT": 0.3
+        },
+        {
+            "DET": -2,
+            "PRON": -2,
+            "PUNCT": -2,
+            "AUX": -2,
+            "DEFAULT": -1
+        },
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "Contextualization": [
+        10,
+        107,
+        1,
+        "nospread",
+        {
+            "DEFAULT": 1
+        },
+        null,
+        "MediumSeaGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        true
+    ],
+    "StanceTaking": [
+        0,
+        373,
+        -1,
+        "spread",
+        {
+            "AUX": 2.5,
+            "PRON": 2,
+            "DET": 2,
+            "CCONJ": 1.5,
+            "SCONJ": 1.5,
+            "DEFAULT": 1.3
+        },
+        null,
+        "MediumSeaGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "VocabularyDifficulty": [
+        5,
+        132,
+        1,
+        "multilevel",
+        {
+            "DEFAULT": 2.35,
+            "SUBRULE": {
+                "DEFAULT": 3
+            }
+        },
+        null,
+        "MediumSeaGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "hscore": [
+        7,
+        358,
+        -1,
+        "spread",
+        {
+            "PUNCT": 2,
+            "DEFAULT": 1
+        },
+        null,
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "VocabularyFrequency": [
+        5,
+        187,
+        1,
+        "multilevel",
+        {
+            "PUNCT": 2,
+            "DEFAULT": 0.7,
+            "SUBRULE": {
+                "DEFAULT": 1
+            }
+        },
+        null,
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ],
+    "LexicalTightness": [
+        10,
+        35,
+        -1,
+        "nospread",
+        {
+            "PRON": 2,
+            "ADJ": 1.2,
+            "PUNCT": 2,
+            "CCONJ": 2,
+            "ADV": 1.5,
+            "AUX": 2,
+            "DEFAULT": 0.9
+        },
+        null,
+        "PaleGreen",
+        "PaleGreen",
+        "White",
+        "White",
+        false
+    ]
+}

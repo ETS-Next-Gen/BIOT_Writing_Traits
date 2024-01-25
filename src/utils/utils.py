@@ -20,47 +20,63 @@ def read_input_file(input_path: str) -> str:
     assert input_path.endswith(".txt")
     with open(Path(input_path), "r") as f:
         text = f.read()
-
     return text
 
-
 def process_text(
-    input_str: str, model: AutoModel, tokenizer: AutoTokenizer
-) -> t.List[np.ndarray]:
+    input_str: str,
+    model: AutoModel,
+    tokenizer: AutoTokenizer) -> t.List[np.ndarray]:
     """
     Process input text using the provided model and tokenizer.
     """
-    inputs = tokenizer(input_str, add_special_tokens=False, return_tensors="pt")
+
+    inputs = tokenizer(input_str,
+                       add_special_tokens=False,
+                       return_tensors="pt")
     outputs = model(**inputs, output_hidden_states=True)
     per_layer_hidden_states = [
-        hidden_states.detach().numpy() for hidden_states in outputs.hidden_states
+        hidden_states.detach().numpy() \
+           for hidden_states in outputs.hidden_states
     ]
 
     return per_layer_hidden_states
 
 def produce_embedding(
-    input_str: str, model: AutoModel, tokenizer: AutoTokenizer
-) -> t.List[np.ndarray]:
+    input_str: str,
+    model: AutoModel,
+    tokenizer: AutoTokenizer
+    ) -> t.List[np.ndarray]:
     """
     Process input text using the provided model and tokenizer.
     """
-    inputs = tokenizer(input_str, add_special_tokens=False, return_tensors="pt")
-    outputs = model(**inputs, output_hidden_states=True)
+
+    inputs = tokenizer(input_str,
+                       add_special_tokens=False,
+                       return_tensors="pt")
+    outputs = model(**inputs,
+                    output_hidden_states=True)
     per_layer_hidden_states = [
-        torch.mean(hidden_states.detach().cpu(), dim=1).numpy() for hidden_states in outputs.hidden_states
+        torch.mean(hidden_states.detach().cpu(),
+                   dim=1).numpy() \
+           for hidden_states in outputs.hidden_states
     ]
 
     return per_layer_hidden_states
 
 
 def get_rotation_matrix(path: str = None) -> t.Dict:
-    """ """
+    """
+         Retrieve the rotation matrices we have calculated
+         for a set of traits using BIOT
+    """
     out = {}
     matrix_paths = glob.glob(str(Path(path) / "*.csv"))
     for matrix_path in matrix_paths:
 
-        rotation_matrix = pd.read_csv(matrix_path, header=None).to_numpy()
-        i_layer = re.search(r"layer_([\d]+)_", str(matrix_path)).group(1)
+        rotation_matrix = pd.read_csv(matrix_path,
+                                      header=None).to_numpy()
+        i_layer = re.search(r"layer_([\d]+)_",
+                            str(matrix_path)).group(1)
         out[int(i_layer)] = rotation_matrix
 
     return out
@@ -70,72 +86,116 @@ def calculate_token_scores(
     hidden_state: np.ndarray,
     rotation_matrix_dict: t.Dict,
     i_layer: int = -1,
-    i_dim: int = 0,
-) -> np.ndarray:
+    i_dim: int = 0) -> np.ndarray:
     """
-    Calculate scores for tokens based on hidden states and rotation matrix.
+    Calculate scores for tokens based on hidden states
+    and rotation matrix.
     """
     layer_state = hidden_state[int(i_layer)]
     rotation_matrix = rotation_matrix_dict[int(i_layer)]
 
-    assert layer_state.shape[-1] == rotation_matrix.shape[0]
+    assert layer_state.shape[-1] == \
+           rotation_matrix.shape[0]
 
-    scores = np.matmul(layer_state, rotation_matrix)[:, :, int(i_dim)]
+    scores = np.matmul(layer_state,
+                       rotation_matrix)[:,
+                                        :,
+                                        int(i_dim)]
     scores = scores.squeeze()
 
     return scores
 
 
-def get_standardization_stats(path: str, i_layer: int) -> t.Dict:
-    with open(Path(path), "r") as f:
-        per_layer_stats = json.load(f)
+def align(doc,
+          tokens,
+          scores,
+          aligned_tokens,
+          aligned_scores):
+    """
+    Give a list of tokens and scores and a Spacy parse,
+    produce a set of tokens and scores aligned with the
+    spacy tokenization.
+    """
 
-    return per_layer_stats[str(i_layer)]
-
-
-def apply_standardization(
-    score_matrix: np.ndarray, mean: float, std: float
-) -> np.ndarray:
-    return (score_matrix - mean) / std
-
-
-def align(doc, tokens, scores, aligned_tokens, aligned_scores):
-    if len(doc) == 0 or len(tokens)==0:
+    # base case for recursion -- if we're done,
+    # just return
+    if len(doc) == 0 or len(tokens) == 0:
         return aligned_tokens, aligned_scores
+
     if doc[0].text.lower() == tokens[0].lower():
-        if len(tokens)>0 and len(scores)>0:
+        # the spacy and LLM tokens match, so just enter
+        # it and output
+        if len(tokens)>0 and len(scores) > 0:
             aligned_tokens.append(tokens[0])
             aligned_scores.append(scores[0])
-        return align(doc[1:], tokens[1:], scores[1:], aligned_tokens, aligned_scores)
+        return align(doc[1:],
+                     tokens[1:],
+                     scores[1:],
+                     aligned_tokens,
+                     aligned_scores)
     else:
         loc = 1
         combotok = tokens[0].lower() + tokens[loc].lower()
+
         if tokens[0].lower().startswith(doc[0].text.lower()):
+            # token overlap, fix
             aligned_scores.append(scores[0])
             aligned_tokens.append(doc[0].text.lower())
             leftover = tokens[0][len(doc[0].text):]
             tokens[1] = leftover + tokens[1]
-            return align(doc[1:], tokens[1:], scores[1:], aligned_tokens, aligned_scores)
+
+            return align(doc[1:],
+                         tokens[1:],
+                         scores[1:],
+                         aligned_tokens,
+                         aligned_scores)
         
-        while loc<len(tokens) and combotok != doc[0].text.lower() and len(combotok) <= len(doc[0].text):
+        #token underlap, fix
+        while loc<len(tokens) \
+           and combotok != doc[0].text.lower() \
+           and len(combotok) <= len(doc[0].text):
+
             loc+=1
             combotok += tokens[loc].lower()
+
         if len(combotok) > len(doc[0].text):
+
             aligned_tokens.append(doc[0].text)
             aligned_scores.append(0)
-            return align(doc[1:], tokens, scores, aligned_tokens, aligned_scores)
+
+            return align(doc[1:],
+                         tokens,
+                         scores,
+                         aligned_tokens,
+                         aligned_scores)
+
         elif combotok == doc[0].text.lower():
+
             aligned_tokens.append(combotok)
             total = 0
             for i in range(0,loc+1):
                 total += scores[i]
             aligned_scores.append(total/(loc+1))
-            return align(doc[1:], tokens[loc+1:], scores[loc+1:], aligned_tokens, aligned_scores)
+
+            return align(doc[1:],
+                         tokens[loc+1:],
+                         scores[loc+1:],
+                         aligned_tokens,
+                         aligned_scores)
         else:
+
             print('mismatch')
-            return align(doc[1:], tokens[1:], scores[1:], aligned_tokens, aligned_scores)
+            return align(doc[1:],
+                         tokens[1:],
+                         scores[1:],
+                         aligned_tokens,
+                         aligned_scores)
 
 def add_trait(doc, trait, aligned_scores):
+    """
+        Store trait scores in each token in the
+        spacy parse tree as extended attributes
+    """
     Token.set_extension(trait, default=0)
     for i, token in enumerate(aligned_scores):
         setattr(doc[i]._, trait, aligned_scores[i])
@@ -143,6 +203,13 @@ def add_trait(doc, trait, aligned_scores):
 def print_parse_tree(sent, trait):
     """
         Print pretty formatted version of parse tree
+        This is a modification of
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
+
+        If we integrate this code with the AWE_Components module
+        at some point, we'll need to deal with the overlap of this
+        and its supporting functions
     """
 
     lastToken = None
@@ -374,6 +441,14 @@ def print_parse_tree(sent, trait):
             lastHeadLoc = head.i
 
 def getHead(tok: Token):
+    """
+     This function calculates the immediate ancestor (head)
+     of the current word in the spaCY dependency tree
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
+    """
     if tok is not None and tok is not bool:
         for anc in tok.ancestors:
             return anc
@@ -384,6 +459,10 @@ def getDepth(tok: Token):
     """
      This function calculates the depth of the current word
      in the spaCY dependency tree
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     depth = 0
     if tok is not None:
@@ -395,6 +474,10 @@ def getAdjustedDepth(tok: Token):
     """
      This function adjusts the depth of the word node to the
      depth we want to display in the output
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     depth = getDepth(tok)
     adjustment = 0
@@ -432,6 +515,10 @@ def getRight(sentence, loc):
     """
      This function returns the word immediately to the
      right of the input token
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     if loc + 1 < sentence.__len__():
         return sentence[loc + 1]
@@ -446,6 +533,11 @@ def firstLeftSister(tokenA: Token, tokenB: Token):
      'case' (possessive) and punctuations don't interrupt
      a phrase, and that each type of phrase uses a limited
      number of dependencies for left sisters
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     depth = getDepth(tokenA)
     depthB = getDepth(tokenB)
@@ -535,6 +627,11 @@ def isLeftEdge(token: Token, sentence: Span):
     """
      This function indicates whether a token is the
      leftmost element in a sentence
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     for tok in sentence:
         if tok == token:
@@ -547,6 +644,11 @@ def hasLeftChildren(tok: Token):
     """
      This function indicates whether the token input to the
      function has any children to its left
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     for child in tok.children:
         if child.i < tok.i:
@@ -555,6 +657,15 @@ def hasLeftChildren(tok: Token):
 
 
 def isRoot(token):
+    """
+     This function returns the root of the parse tree
+     Supports print_parse_tree
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
+    """
     if token == token.head \
        or token.dep_ == 'ROOT':
         return True
@@ -573,6 +684,11 @@ def takesBareInfinitive(item: Token):
      so we know how to indent the tree properly, among other things.
      The list in this function may not be complete -- the correct
      list should be reviewed.
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     if item is None:
         return False
@@ -608,6 +724,11 @@ def tensed_clause(tok: Token):
      Basically, tensed clauses are either built around the main verb of the
      sentence or they have a subject and are not infinitives or the complements
      of the verbs that take a bare infinitive, e.g., make, have, bid, and let
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
 """
     # does it have a subject?
     hasSubj = False
@@ -682,6 +803,15 @@ def tensed_clause(tok: Token):
 
 
 def getTensedVerbHead(token):
+    """
+     This function gets the tensed verb in the smallest
+     containing clause.
+
+     Supports print_parse_tree
+     Modified version of function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
+    """
     if isRoot(token):
         return token
 
@@ -789,6 +919,12 @@ def getTensedVerbHead(token):
 def getRoot(token):
     """
     This function returns the sentence root for the current token.
+
+
+     Supports print_parse_tree
+     Replicates function in 
+        https://github.com/ETS-Next-Gen/AWE_Components/\
+           blob/main/awe_components/components/utility_functions.py
     """
     if isRoot(token):
         return token
@@ -798,43 +934,85 @@ def getRoot(token):
         return token
     return getRoot(token.head)
 
-def pastThreshold(tok, trait, rule, sign, store, include_stops):
-     if (tok.lemma_ in store
-         or tok.text in store
-         or tok.text.lower() in store
-         or tok.lemma_.lower() in store):
-         return True
-     if tok.pos_ in rule:
-         threshold = rule[tok.pos_]
-     elif tok.text == '.' and 'PERIOD' in rule:
-         threshold = rule['PERIOD']
-     elif tok.text == '"' and 'QUOTE' in rule:
-         threshold = rule['QUOTE']
-     else:
-         threshold = rule['DEFAULT']
-     if sign == 'above' and getattr(tok._, trait) >= threshold:
-         if tok.lemma_ not in store and (tok.lemma_ not in stops or include_stops):
-             store.append(tok.lemma_)
-             if tok.text not in store:
-                 store.append(tok.text)
-             if tok.text.lower() not in store:
-                 store.append(tok.text.lower())
-             if tok.lemma_.lower() not in store:
-                 store.append(tok.lemma_.lower())
-         return True
-     if sign == 'below' and getattr(tok._, trait) <= threshold:
-         if tok.lemma_ not in store and (tok.lemma_ not in stops or include_stops):
-             store.append(tok.lemma_)
-             if tok.text not in store:
-                 store.append(tok.text)
-             if tok.text.lower() not in store:
-                 store.append(tok.text.lower())
-             if tok.lemma_.lower() not in store:
-                 store.append(tok.lemma_.lower())
-         return True
-     return False
+def pastThreshold(tok,
+                  trait,
+                  rule,
+                  sign,
+                  store,
+                  include_stops):
+    """
+      This function determiens whether a trait score
+      on a token is above or below a threshold specified
+      by the rule for highlighting
+    """
+
+    # the store variable keeps a list of word forms that
+    # have already passed the threshold check, if we
+    # are trying to be consistent which word forms
+    # pass the threshold check in the highlighting rule
+    if (tok.lemma_ in store
+        or tok.text in store
+        or tok.text.lower() in store
+        or tok.lemma_.lower() in store):
+        return True
+       
+    # the highlighting rule can include special thresholds
+    # for specific parts of speech
+    if tok.pos_ in rule:
+        threshold = rule[tok.pos_]
+
+    # or for periods and quotes
+    elif tok.text == '.' and 'PERIOD' in rule:
+        threshold = rule['PERIOD']
+    elif tok.text == '"' and 'QUOTE' in rule:
+        threshold = rule['QUOTE']
+
+    # but the rule HAS to give a default threshold for a trait
+    else:
+        threshold = rule['DEFAULT']
+
+    # keyword 'above' means we return true if the trait
+    # score is above the threshold
+    if sign == 'above' and getattr(tok._, trait) >= threshold:
+        if tok.lemma_ not in store \
+           and (tok.lemma_ not in stops \
+                or include_stops):
+
+            # This is bookkeeping to keep the store variable up to date
+            store.append(tok.lemma_)
+            if tok.text not in store:
+                store.append(tok.text)
+            if tok.text.lower() not in store:
+                store.append(tok.text.lower())
+            if tok.lemma_.lower() not in store:
+                store.append(tok.lemma_.lower())
+
+        return True
+
+    # keyword 'below' means we return true if the trait
+    # score is below the threshold
+    if sign == 'below' and getattr(tok._, trait) <= threshold:
+
+        if tok.lemma_ not in store \
+           and (tok.lemma_ not in stops \
+                or include_stops):
+
+            # This is bookkeeping to keep the store variable up to date
+            store.append(tok.lemma_)
+            if tok.text not in store:
+                store.append(tok.text)
+            if tok.text.lower() not in store:
+                store.append(tok.text.lower())
+            if tok.lemma_.lower() not in store:
+                store.append(tok.lemma_.lower())
+        return True
+    return False
 
 def meanAbove(doc, head, trait, threshold):
+    """
+      This function determiens whether the mean trait score
+      for a span is above a threshold
+    """
     total = 0;
     length = 1 + head.right_edge.i - head.left_edge.i
     for tok in doc[head.left_edge.i:head.right_edge.i+1]:
@@ -845,76 +1023,227 @@ def meanAbove(doc, head, trait, threshold):
         return True
 
 def dimHighlight(doc, head, method):
+    """
+      This function sets the dim highlight extended attribute
+      true for all tokens directly commanded by a tensed clause
+    """
     for tok in doc[head.left_edge.i:head.right_edge.i+1]:
-        if method == 'spread' and getTensedVerbHead(tok) != getTensedVerbHead(head):
+        if method == 'spread' \
+           and getTensedVerbHead(tok) != getTensedVerbHead(head):
             continue
         tok._.dim_highlight = True
 
 def negHighlight(doc, head, trait, rule, method, include_stops):
+    """
+      This function sets the negative highlight extended
+      attribute true for all tokens directly commanded by
+      a tensed clause
+    """
     for tok in doc[head.left_edge.i:head.right_edge.i+1]:
-        if method == 'spread' and getTensedVerbHead(tok) != getTensedVerbHead(head):
+        if method == 'spread' \
+           and getTensedVerbHead(tok) != getTensedVerbHead(head):
             continue
-        if rule is None or not pastThreshold(tok, trait, rule, "above", [], include_stops):
+        if rule is None \
+           or not pastThreshold(tok,
+                                trait,
+                                rule,
+                                "above",
+                                [],
+                                include_stops):
             tok._.neg_highlight = True
 
+def apply_highlights(doc,
+                     trait,
+                     method,
+                     rule,
+                     color1,
+                     color2,
+                     negRule,
+                     color3,
+                     color4,
+                     include_stops):
+    """
+      This function is the rule interpreter which decides
+      which tokens will get highlighted which color
+    """
+    html_string = ''
+    store = []
+    # we run through the doc once to use the side effect function of
+    # pastThreshold to put words that need to be highlighted in the store
+    # variable
+    for tok in doc:
+        if rule is not None:
+            pastThreshold(tok, trait, rule, 'above', store, include_stops)
 
-def apply_highlights(doc, trait, method, rule, color1, color2, negRule, color3, color4, include_stops):
-   html_string = ''
-   store = []
-   for tok in doc:
-       if rule is not None:
-           pastThreshold(tok, trait, rule, 'above', store, include_stops)
-   for tok in doc:
-        if tok.lemma_ in store \
-           or (rule is not None and tok == getTensedVerbHead(tok) \
-            and meanAbove(doc, getTensedVerbHead(tok), trait, rule['DEFAULT'])) \
-           or (rule is not None \
-            and pastThreshold(tok, trait, rule, 'above', store, include_stops) \
-            and meanAbove(doc, getTensedVerbHead(tok), trait, -0.3)):
-            if method in ['spread', 'fullspread']:
-                dimHighlight(doc, getTensedVerbHead(tok), method)
-                tok._.bright_highlight = True
-            elif method == 'multilevel':
-                if 'SUBRULE' in rule and pastThreshold(tok, trait, rule['SUBRULE'], 'above', [], include_stops):
-                    tok._.bright_highlight = True
-                else:
-                    tok._.dim_highlight = True
-            else:   
-                tok._.bright_highlight = True
-        if negRule is not None \
-           and pastThreshold(tok, trait, negRule, 'below', [], include_stops):
-            if method in ['spread', 'fullspread']:
-                negHighlight(doc, getTensedVerbHead(tok), trait, rule, method, include_stops)
-                tok._.bright_neg_highlight = True
-            elif method == 'multilevel':
-                if 'SUBRULE' in rule and pastThreshold(tok, trait, negRule['SUBRULE'], 'below', [], include_stops):
-                    tok._.bright_neg_highlight = True
-                else:
-                    tok._.neg_highlight = True                
-            else:
-                tok._.bright_neg_highlight = True
-   template = (
-               '<span class="barcode"; style="color: black; background-color: {}">{}</span>'
-              )
-   for tok in doc:
-       if tok._.bright_neg_highlight:
-           html_string += template.format(color3, tok.text_with_ws)                     
-       elif tok._.neg_highlight:
-           html_string += template.format(color4, tok.text_with_ws)          
-       elif tok._.bright_highlight:
-           html_string += template.format(color1, tok.text_with_ws)
-       elif tok._.dim_highlight:
-           html_string += template.format(color2, tok.text_with_ws)
-       else:
-           html_string += tok.text_with_ws
-   return html_string
+    # now we set the highlighting extended attributes
+    for tok in doc:
 
-def get_html_string(doc, tokens, token_scores, trait, method, rule, color1, color2, negRule, color3, color4, include_stops):
+         # three ways to get highlighted positively:
+         # (1) already flagged in store
+         # (2) this is the head of the clause and the mean score passes threshold
+         # (3) the token score passes threshold and the mean score isn't strongly
+         #     negative
+         if tok.lemma_ in store \
+            or (rule is not None \
+                and tok == getTensedVerbHead(tok) \
+             and meanAbove(doc,
+                           getTensedVerbHead(tok),
+                           trait,
+                           rule['DEFAULT'])) \
+            or (rule is not None \
+             and pastThreshold(tok,
+                               trait,
+                               rule,
+                               'above',
+                               store,
+                               include_stops) \
+             and meanAbove(doc,
+                           getTensedVerbHead(tok),
+                           trait,
+                           -0.3)):
+
+             # The spread and fullspread methods in the rule
+             # cause dim highlighting to spread to all of the
+             # tokens in the current token's tensed clause
+             if method in ['spread', 'fullspread']:
+                 dimHighlight(doc, getTensedVerbHead(tok), method)
+                 tok._.bright_highlight = True
+
+             # the multilevel rule finds a SUBRULE and checks whether
+             # the token passes this threshold to get a higher level of
+             # highlighting
+             elif method == 'multilevel':
+                 if 'SUBRULE' in rule \
+                    and pastThreshold(tok,
+                                      trait, \
+                                      rule['SUBRULE'],
+                                      'above',
+                                      [],
+                                      include_stops):
+                     tok._.bright_highlight = True
+                 else:
+                     tok._.dim_highlight = True
+             else:   
+                 tok._.bright_highlight = True
+
+         # we can also specify a threshold for negative values and
+         # apply negative color highlighting to them
+         if negRule is not None \
+            and pastThreshold(tok,
+                              trait,
+                              negRule,
+                              'below',
+                              [],
+                              include_stops):
+             
+             # The spread and fullspread methods in the rule
+             # cause dim highlighting to spread to all of the
+             # tokens in the current token's tensed clause
+             if method in ['spread', 'fullspread']:
+                 negHighlight(doc,
+                              getTensedVerbHead(tok),
+                              trait,
+                              rule,
+                              method,
+                              include_stops)
+                 tok._.bright_neg_highlight = True               
+
+             # the multilevel rule finds a SUBRULE and checks whether
+             # the token passes this threshold to get a higher level of
+             # highlighting
+             elif method == 'multilevel':
+                 if 'SUBRULE' in rule \
+                    and pastThreshold(tok,
+                                      trait, \
+                                      negRule['SUBRULE'],
+                                      'below',
+                                      [],
+                                      include_stops):                     
+                     tok._.bright_neg_highlight = True
+                 else:
+                     tok._.neg_highlight = True                
+             else:
+                 tok._.bright_neg_highlight = True
+
+    # We use this template to apply color formatting to tokens
+    template = (
+                '<span class="barcode"; style="color: black; background-color: {}">{}</span>'
+               )
+    # when we apply the color to each token, we also replace newlines
+    # with html linebreaks
+    for tok in doc:
+        if tok._.bright_neg_highlight:
+            html_string += \
+                        template.format(color3,
+                                        tok.text_with_ws.replace('\n',
+                                                                 '<br>'))                     
+        elif tok._.neg_highlight:
+            html_string += \
+                        template.format(color4,
+                                        tok.text_with_ws.replace('\n',
+                                                                 '<br>'))          
+        elif tok._.bright_highlight:
+            html_string += \
+                        template.format(color1,
+                                        tok.text_with_ws.replace('\n',
+                                                                 '<br>'))
+        elif tok._.dim_highlight:
+            html_string += \
+                        template.format(color2,
+                                        tok.text_with_ws.replace('\n',
+                                                                 '<br>'))
+        else:
+            html_string += \
+                        tok.text_with_ws.replace('\n',\
+                                                 '<br>')
+
+    return html_string
+
+def get_html_string(doc,
+                    tokens,
+                    token_scores,
+                    trait,
+                    method,
+                    rule,
+                    color1,
+                    color2,
+                    negRule,
+                    color3,
+                    color4,
+                    include_stops):
+    """
+      This function adds traits to the parse tree
+      and then highlights appropriately.
+    """
+
+    # clear extended attributes for highlighting
     for token in doc:
         token._.dim_highlight = False
         token._.bright_highlight = False
         token._.neg_highlight = False
         token._.bright_neg_highlight = False
-    aligned_tokens, aligned_scores = align(doc, tokens, token_scores, [], [])
+
+    # align tokens and scores with spacy parse tree
+    aligned_tokens, aligned_scores = \
+                    align(doc,
+                          tokens,
+                          token_scores,
+                          [],
+                          [])
+
+    # add traits to the spacy parse tree
     add_trait(doc, trait, aligned_scores)
-    return apply_highlights(doc, trait, method, rule, color1, color2, negRule, color3, color4, include_stops)
+
+    # calcualte and returnn highlights consitent with the rule we passed
+    # in for this trait
+    return apply_highlights(doc,
+                            trait,
+                            method,
+                            rule,
+                            color1,
+                            color2,
+                            negRule,
+                            color3,
+                            color4,
+                            include_stops)
+
