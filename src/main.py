@@ -6,6 +6,7 @@ import argparse
 import sys
 import numpy as np
 import json
+import string
 
 import pandas as pd
 from transformers import AutoModel, AutoTokenizer
@@ -113,11 +114,16 @@ def main(
         # as holding that string.
         essay = row[text]
 
+        if isinstance(essay, float):
+            continue
+
         # small adjustment to make sure quotation marks
         # are correctly associated with the sentence they
         # belong with
         essay = essay.replace('."', '".')
 
+        if len(essay.translate({ord(c): None for c in string.whitespace}))==0:
+            continue
         # If we're going to output highlighted text, we'll be using
         # a spacy parse to manage the process, so set up Spacy properly
         nlp = None
@@ -227,6 +233,8 @@ def main(
 
                 # reformat the token scores so they're
                 # explicitly associated with tokens
+                if not isinstance(token_scores, list):
+                    token_scores = [token_scores] 
                 token_scores = list(zip(tokens,
                                         token_scores))
                 # add the traits to the output matrix
