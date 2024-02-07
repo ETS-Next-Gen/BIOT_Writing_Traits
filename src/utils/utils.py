@@ -975,7 +975,7 @@ def pastThreshold(tok,
     # score is above the threshold
     if sign == 'above' and getattr(tok._, trait) >= threshold:
         if tok.lemma_ not in store \
-           and (tok.lemma_ not in stops \
+           and (tok.lemma_ not in stops and tok.pos_ not in ['PUNCT', 'PRON', 'ADP', 'DET'] \
                 or include_stops):
 
             # This is bookkeeping to keep the store variable up to date
@@ -994,7 +994,7 @@ def pastThreshold(tok,
     if sign == 'below' and getattr(tok._, trait) <= threshold:
 
         if tok.lemma_ not in store \
-           and (tok.lemma_ not in stops \
+           and (tok.lemma_ not in stops and tok.pos_ not in ['PUNCT', 'PRON', 'ADP', 'DET']  \
                 or include_stops):
 
             # This is bookkeeping to keep the store variable up to date
@@ -1078,18 +1078,9 @@ def apply_highlights(doc,
     # now we set the highlighting extended attributes
     for tok in doc:
 
-         # three ways to get highlighted positively:
-         # (1) already flagged in store
-         # (2) this is the head of the clause and the mean score passes threshold
-         # (3) the token score passes threshold and the mean score isn't strongly
-         #     negative
          if tok.lemma_ in store \
             or (rule is not None \
-                and tok == getTensedVerbHead(tok) \
-             and meanAbove(doc,
-                           getTensedVerbHead(tok),
-                           trait,
-                           rule['DEFAULT'])) \
+                and tok == getTensedVerbHead(tok)) \
             or (rule is not None \
              and pastThreshold(tok,
                                trait,
@@ -1152,7 +1143,7 @@ def apply_highlights(doc,
              # the token passes this threshold to get a higher level of
              # highlighting
              elif method == 'multilevel':
-                 if 'SUBRULE' in rule \
+                 if 'SUBRULE' in negRule \
                     and pastThreshold(tok,
                                       trait, \
                                       negRule['SUBRULE'],

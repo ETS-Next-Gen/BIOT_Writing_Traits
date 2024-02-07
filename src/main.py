@@ -233,8 +233,9 @@ def main(
 
                 # reformat the token scores so they're
                 # explicitly associated with tokens
-                if not isinstance(token_scores, list):
-                    token_scores = [token_scores] 
+
+                #if not isinstance(token_scores, list):
+                #    token_scores = [token_scores.tolist()] 
                 token_scores = list(zip(tokens,
                                         token_scores))
                 # add the traits to the output matrix
@@ -279,6 +280,7 @@ def main(
             else:
                 with open(output_path + '.json',
                           "w") as data_file:
+                    #print(output)
                     json.dump(output,
                               data_file,
                               indent=4,
@@ -329,7 +331,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--html_path",
                         action="store_true")
     parser.add_argument("-x", "--highlight_path",
-                        default="data/rotation/highlighting/")
+                        default="data/rotation/persuasive/highlighting/")
     parser.add_argument("-e", "--embeddings",
                         action="store_true")
     parser.add_argument("-n", "--no_rotation",
