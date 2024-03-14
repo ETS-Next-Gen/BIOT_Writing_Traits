@@ -4,6 +4,7 @@ import glob
 import re
 import json
 
+
 import torch
 import numpy as np
 import pandas as pd
@@ -75,8 +76,7 @@ def get_rotation_matrix(path: str = None) -> t.Dict:
 
         rotation_matrix = pd.read_csv(matrix_path,
                                       header=None).to_numpy()
-        i_layer = re.search(r"layer_([\d]+)_",
-                            str(matrix_path)).group(1)
+        i_layer = re.search(r"layer_([\d]+)_", str(matrix_path)).group(1)
         out[int(i_layer)] = rotation_matrix
 
     return out
@@ -117,7 +117,6 @@ def align(doc,
     spacy tokenization.
     """
 
-    # base case for recursion -- if we're done,
     # just return
     if len(doc) == 0 or len(tokens) == 0:
         return aligned_tokens, aligned_scores
@@ -134,8 +133,13 @@ def align(doc,
                      aligned_tokens,
                      aligned_scores)
     else:
+        if len(tokens) == 1:
+            aligned_scores.append(scores[0])
+            aligned_tokens.append(doc[0].text.lower())
+            return aligned_tokens, aligned_scores
         loc = 1
         combotok = tokens[0].lower() + tokens[loc].lower()
+
 
         if tokens[0].lower().startswith(doc[0].text.lower()):
             # token overlap, fix
@@ -149,6 +153,7 @@ def align(doc,
                          scores[1:],
                          aligned_tokens,
                          aligned_scores)
+                         
         
         #token underlap, fix
         while loc<len(tokens) \
@@ -975,7 +980,7 @@ def pastThreshold(tok,
     # score is above the threshold
     if sign == 'above' and getattr(tok._, trait) >= threshold:
         if tok.lemma_ not in store \
-           and (tok.lemma_ not in stops and tok.pos_ not in ['PUNCT', 'PRON', 'ADP', 'DET'] \
+           and ((tok.lemma_ not in stops and tok.pos_ not in ['PUNCT', 'PRON', 'ADP', 'DET']) \
                 or include_stops):
 
             # This is bookkeeping to keep the store variable up to date
@@ -1079,8 +1084,6 @@ def apply_highlights(doc,
     for tok in doc:
 
          if tok.lemma_ in store \
-            or (rule is not None \
-                and tok == getTensedVerbHead(tok)) \
             or (rule is not None \
              and pastThreshold(tok,
                                trait,

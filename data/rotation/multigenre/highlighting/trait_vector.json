@@ -1,6 +1,6 @@
 {
     "Formality": [
-        3,
+        1,
         360,
         -1,
         "multilevel",
@@ -10,7 +10,7 @@
             "CCONJ": 1,
             "MD": 1,
             "PUNCT": 1,
-            "DEFAULT": 0.3,
+            "DEFAULT": 0.5,
             "SUBRULE": {
                 "ADP": 2,
                 "DET": 2,
@@ -21,36 +21,44 @@
             }
         },
         null,
-        "MediumSeaGreen",
+        "#0BDA51",
         "PaleGreen",
         "",
         "",
         false
     ],
-    "Narrativity": [
-        2,
-        123,
+    "SentenceComplexity": [
         1,
-        "spread",
+        287,
+        1,
+        "multilevel",
         {
-            "DEFAULT": 1.25
+            "DEFAULT": 0.7,
+            "SUBRULE": {
+                "DEFAULT": 1.5
+            }
         },
-        null,
-        "MediumSeaGreen",
+        {
+            "DEFAULT": -1,
+            "SUBRULE": {
+                "DEFAULT": -2.0
+            }
+        },
+        "#0BDA51",
         "PaleGreen",
-        "",
-        "",
+        "DarkRed",
+        "LightCoral",
         false
     ],
     "SentenceLength": [
-        2,
+        1,
         245,
         -1,
         "multilevel",
         {
-            "DEFAULT": 0.75,
+            "DEFAULT": 1,
             "SUBRULE": {
-                "DEFAULT": 1.5
+                "DEFAULT": 2
             }
         },
         {
@@ -59,30 +67,7 @@
                 "DEFAULT": -2
             }
         },
-        "MediumSeaGreen",
-        "PaleGreen",
-        "DarkRed",
-        "LightCoral",
-        false
-    ],
-    "SentenceComplexity": [
-        4,
-        301,
-        -1,
-        "multilevel",
-        {
-            "DEFAULT": 0.7,
-            "SUBRULE": {
-                "DEFAULT": 1
-            }
-        },
-        {
-            "DEFAULT": -0.7,
-            "SUBRULE": {
-                "DEFAULT": -1.0
-            }
-        },
-        "MediumSeaGreen",
+        "#0BDA51",
         "PaleGreen",
         "DarkRed",
         "LightCoral",
@@ -94,28 +79,33 @@
         1,
         "multilevel",
         {
-            "DEFAULT": 0.9,
+            "DEFAULT": 1,
             "SUBRULE": {
-                "DEFAULT": 1.8
+                "DEFAULT": 1.5
             }
         },
-        null,
+        {
+            "DEFAULT": -1,
+            "SUBRULE": {
+                "DEFAULT": -1.5
+            }
+        },
+        "#0BDA51",
         "PaleGreen",
-        "PaleGreen",
-        "White",
-        "White",
+        "DarkRed",
+        "LightCoral",
         false
     ],
     "Dialog": [
-        7,
-        52,
+        2,
+        28,
         -1,
         "fullspread",
         {
             "DEFAULT": 1
         },
         null,
-        "MediumSeaGreen",
+        "#0BDA51",
         "PaleGreen",
         "",
         "",
@@ -127,23 +117,21 @@
         1,
         "multilevel",
         {
-            "PUNCT": 2,
-            "DET": 2,
-            "DEFAULT": 0,
+            "DEFAULT": 0.5,
             "SUBRULE": {
                 "DEFAULT": 1
             }
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": -0.5,
             "SUBRULE": {
                 "DEFAULT": -1
             }
         },
-        "MediumSeaGreen",
+        "#0BDA51",
         "PaleGreen",
-        "DarkRed",
-        "LightCoral",
+        "#E30B5C",
+        "#FF0000",
         false
     ],
     "GrammarUsage": [
@@ -160,20 +148,19 @@
         },
         "White",
         "White",
-        "DarkRed",
-        "LightCoral",
+        "#E30B5C",
+        "#FF0000",
         false
     ],
     "Concreteness": [
         2,
-        348,
+        170,
         -1,
         "multilevel",
         {
-            "QUOTE": 2,
-            "DEFAULT": 1.5,
+            "DEFAULT": 1,
             "SUBRULE": {
-                "DEFAULT": 2
+                "DEFAULT": 1.5
             }
         },
         null,
@@ -184,27 +171,42 @@
         false
     ],
     "Conventionality": [
-        4,
-        210,
-        -1,
+        2,
+        225,
+        1,
         "nospread",
         null,
         {
-            "DEFAULT": -2.7
+            "DEFAULT": -2
         },
         "White",
         "White",
-        "IndianRed",
-        "LightCoral",
+        "#E30B5C",
+        "#FF0000",
+        false
+    ],
+    "Mechanics": [
+        2,
+        348,
+        1,
+        "nospread",
+        null,
+        {
+            "DEFAULT": -2
+        },
+        "White",
+        "White",
+        "#E30B5C",
+        "#FF0000",
         false
     ],
     "Interactivity": [
-        3,
+        2,
         132,
         -1,
         "spread",
         {
-            "DEFAULT": 1
+            "DEFAULT": 0.9
         },
         null,
         "MediumSeaGreen",
@@ -233,8 +235,8 @@
     ],
     "StanceTaking": [
         2,
-        373,
-        -1,
+        184,
+        1,
         "spread",
         {
             "AUX": 2.5,
@@ -252,12 +254,12 @@
         false
     ],
     "VocabularyDifficulty": [
-        3,
+        2,
         210,
         -1,
         "multilevel",
         {
-            "DEFAULT": 2.2,
+            "DEFAULT": 1.5,
             "SUBRULE": {
                 "DEFAULT": 3
             }
@@ -270,14 +272,16 @@
         false
     ],
     "VocabularyFrequency": [
-        3,
+        2,
         218,
         1,
         "multilevel",
         {
-            "DEFAULT": -0.4,
+            "PUNCT": -2,
+            "DEFAULT": -1,
             "SUBRULE": {
-                "DEFAULT": -1.5
+                "PUNCT": -4,
+                "DEFAULT": -2
             }
         },
         null,
@@ -288,7 +292,7 @@
         true
     ],
     "hscore": [
-        1,
+        2,
         175,
         1,
         "multilevel",
@@ -306,9 +310,9 @@
         true
     ],
     "LexicalTightness": [
-        2,
-        35,
-        -1,
+        6,
+        255,
+        1,
         "nospread",
         {
             "PRON": 2,

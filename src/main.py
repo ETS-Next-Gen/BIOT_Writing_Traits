@@ -12,6 +12,7 @@ import pandas as pd
 from transformers import AutoModel, AutoTokenizer
 import spacy
 from spacy.tokens import Doc, Token, Span
+from anyascii import anyascii
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -34,7 +35,6 @@ def main(
     text_id: str,
     text: str,
     passthrough: str,
-    highlight_path: str,
     csv_input: bool=False,
     csv_path: bool=False,
     html_path: bool=False,
@@ -64,10 +64,10 @@ def main(
     rotation_matrix = get_rotation_matrix(rotation_path)
     
     # load the highlighting rules to token trait score info
-    with open(highlight_path + 'trait_vector.json',
+    with open(rotation_path + 'highlighting/trait_vector.json',
               "r") as tvec:
         trait_vector = json.load(tvec)
-    with open(highlight_path + 'excludes.json',
+    with open(rotation_path + 'highlighting/excludes.json',
               "r") as excl:
         excludes = json.load(excl)
 
@@ -117,13 +117,47 @@ def main(
         if isinstance(essay, float):
             continue
 
+        try:
+            essay = essay.encode('latin-1', errors='backslashreplace').decode('unicode-escape')
+        except:
+            print('decode error')
         # small adjustment to make sure quotation marks
         # are correctly associated with the sentence they
         # belong with
-        essay = essay.replace('."', '".')
+        
+        import re
+        
+        essay = re.sub(r"_+", "_", essay)
+        essay = re.sub(r"\n\n+", "\n\n", essay)
+        essay = re.sub(r"!!+", "!", essay)
+        essay = re.sub(r"---+", "--", essay)
+        essay = re.sub(r"[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]+", "", essay)
 
+        essay = essay.replace('."', '".')
+        #essay = essay.replace('\\u201c','"')
+        #essay = essay.replace('\\u201d','"')
+        #essay = essay.replace('\\u2013',' -- ')
+        #essay = essay.replace('\\ue908','')
+        #essay = essay.replace('\\x0b','')
+        #essay = essay.replace('\\x0c','')
+        #essay = essay.replace('\\xbe','')
+        #essay = essay.replace('\\u00bd','1/2')
+        #essay = essay.replace('\\u00bc','1/4')
+        #essay = essay.replace('\\u2153','1/3')
+        #essay = essay.replace('\\u2018','\'')
+        #essay = essay.replace('\\u2019','\'')
+        #essay = essay.replace('\\u2026','...')
+        if len(essay)>8000:
+            essay = essay[:8000]
+        
         if len(essay.translate({ord(c): None for c in string.whitespace}))==0:
             continue
+            
+        if len(essay) < 50:
+            continue
+            
+        essay = anyascii(essay)
+        
         # If we're going to output highlighted text, we'll be using
         # a spacy parse to manage the process, so set up Spacy properly
         nlp = None
@@ -149,6 +183,9 @@ def main(
         tokens = tokenizer.tokenize(essay)
         tokens = [token.replace("▁",
                                 "") for token in tokens]
+
+        if len(tokens)>3000:
+            continue
         
         # get the hidden states out of the LLM
         per_layer_hidden_states = process_text(essay,
@@ -191,7 +228,7 @@ def main(
                 # retrieve the rule relevant to this trait from trait_vector
                 (layer, dimension, sign, method, rule, negRule, color1,
                  color2, color3, color4, include_stops) = trait_vector[trait]
-
+                   
                 # calculate the essay's score for this particular trait 
                 # Note we reverse sign of the trait score if the rule says
                 # so (sign should always be 1 or -1)
@@ -206,6 +243,7 @@ def main(
                     layer,
                     dimension
                 )
+                
                 # reverse the sign of the token score if the rule says so
                 token_scores = token_scores*sign
 
@@ -233,7 +271,8 @@ def main(
 
                 # reformat the token scores so they're
                 # explicitly associated with tokens
-
+                if len(token_scores)<2:
+                    continue
                 #if not isinstance(token_scores, list):
                 #    token_scores = [token_scores.tolist()] 
                 token_scores = list(zip(tokens,
@@ -330,8 +369,6 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument("-p", "--html_path",
                         action="store_true")
-    parser.add_argument("-x", "--highlight_path",
-                        default="data/rotation/persuasive/highlighting/")
     parser.add_argument("-e", "--embeddings",
                         action="store_true")
     parser.add_argument("-n", "--no_rotation",
@@ -350,7 +387,6 @@ if __name__ == "__main__":
         args.text_id,
         args.text,
         args.passthrough,
-        args.highlight_path,
         args.csv_input,
         args.csv_path,
         args.html_path,
