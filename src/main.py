@@ -4,11 +4,12 @@ import logging
 from pathlib import Path
 import argparse
 import sys
-import numpy as np
 import json
 import string
+import csv
 
 import pandas as pd
+import numpy as np
 from transformers import AutoModel, AutoTokenizer
 import spacy
 from spacy.tokens import Doc, Token, Span
@@ -194,6 +195,34 @@ def main(
         embedding_matrix = produce_embedding(essay,
                                              model,
                                              tokenizer)
+        
+        # write tokens embedding to file and store corresponding token id
+        for i_layer, layer in enumerate(per_layer_hidden_states):
+            embedding_output_file = open(Path(output_path) / f'token_embedding_layer_{i_layer}.csv', 'a')
+            embedding_writer = csv.writer(
+                embedding_output_file,
+                delimiter=',',
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL
+            )
+            id_output_file = open(Path(output_path) / f'token_id_layer_{i_layer}.csv', 'a')
+            id_writer = csv.writer(
+                id_output_file,
+                delimiter=',',
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL
+            )
+
+            layer = layer.squeeze()
+            for i_token in range(layer.shape[0]):
+                token_embedding_vector = layer[i_token, :].tolist()
+                token_embedding_id = f"{row['essay_id_comp']}_{i_token:04d}"
+                
+                embedding_writer.writerow(token_embedding_vector)
+                id_writer.writerow([token_embedding_id])
+            
+            embedding_output_file.close()
+            id_output_file.close()
 
         # if we need to produce the unmodified embeddings (for instance,
         # to run BIOT to calculate rotation matrices), gather the
